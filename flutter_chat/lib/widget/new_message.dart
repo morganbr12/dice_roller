@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class NewMessages extends StatefulWidget {
@@ -14,6 +17,31 @@ class _NewMessagesState extends State<NewMessages> {
   void dispose() {
     _messageController.dispose();
     super.dispose();
+  }
+
+  void _submitMessage() async {
+    final enteredMessage = _messageController.text;
+
+    if (enteredMessage.trim().isEmpty) {
+      return;
+    }
+    _messageController.clear();
+    FocusScope.of(context).unfocus();
+
+    final user = FirebaseAuth.instance.currentUser!;
+    final userData = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    // send to firebase
+    FirebaseFirestore.instance.collection('chat').add({
+      'text': enteredMessage,
+      'createAt': Timestamp.now(),
+      'userId': user.uid,
+      'username': userData.data()!['username'],
+      'userImage': userData.data()!['image_url'],
+    });
   }
 
   @override
@@ -33,7 +61,7 @@ class _NewMessagesState extends State<NewMessages> {
           ),
           IconButton(
             color: Theme.of(context).colorScheme.primary,
-            onPressed: () {},
+            onPressed: _submitMessage,
             icon: const Icon(Icons.send),
           ),
         ],
