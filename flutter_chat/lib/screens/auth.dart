@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,7 +21,9 @@ class _AthenticationState extends State<Authentication> {
 
   String enteredEmail = '';
   String enteredPassword = '';
+  String enteredUserName = '';
   File? selectedImage;
+  bool isAuthenticating = false;
 
   void onSubmit() async {
     final isValid = _form.currentState!.validate();
@@ -31,6 +34,9 @@ class _AthenticationState extends State<Authentication> {
 
     _form.currentState!.save();
     try {
+      setState(() {
+        isAuthenticating = true;
+      });
       if (isLogin) {
         // add login details here
         await _firebase.signInWithEmailAndPassword(
@@ -49,7 +55,15 @@ class _AthenticationState extends State<Authentication> {
             .child('${userCrendential.user!.uid}.jpg');
         await storageRef.putFile(selectedImage!);
         final imageUrl = await storageRef.getDownloadURL();
-        debugPrint(imageUrl);
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCrendential.user!.uid)
+            .set({
+          'username': enteredUserName,
+          'email': enteredEmail,
+          'image_url': imageUrl,
+        });
       }
     } on FirebaseAuthException catch (error) {
       ScaffoldMessenger.of(context).clearSnackBars();
@@ -58,6 +72,9 @@ class _AthenticationState extends State<Authentication> {
           content: Text(error.message ?? "Registration failed."),
         ),
       );
+      setState(() {
+        isAuthenticating = false;
+      });
     }
   }
 
@@ -122,6 +139,23 @@ class _AthenticationState extends State<Authentication> {
                                   enteredEmail = value!;
                                 },
                               ),
+                              if (!isLogin)
+                                TextFormField(
+                                  decoration: const InputDecoration(
+                                      labelText: 'Username'),
+                                  enableSuggestions: false,
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        value.trim().length < 4) {
+                                      return 'Please enter at least 4 characters';
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    enteredUserName = value!;
+                                  },
+                                ),
                               TextFormField(
                                 decoration: const InputDecoration(
                                   labelText: 'Password',
@@ -141,26 +175,33 @@ class _AthenticationState extends State<Authentication> {
                               const SizedBox(
                                 height: 20,
                               ),
-                              ElevatedButton(
-                                onPressed: onSubmit,
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                    foregroundColor: Colors.white),
-                                child: Text(isLogin ? 'LogIn' : 'Sign Up'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    isLogin = !isLogin;
-                                  });
-                                },
-                                child: Text(
-                                  isLogin
-                                      ? 'create new account'
-                                      : 'Already have account',
+                              if (isAuthenticating)
+                                CircularProgressIndicator.adaptive(
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
                                 ),
-                              )
+                              if (!isAuthenticating)
+                                ElevatedButton(
+                                  onPressed: onSubmit,
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
+                                      foregroundColor: Colors.white),
+                                  child: Text(isLogin ? 'LogIn' : 'Sign Up'),
+                                ),
+                              if (!isAuthenticating)
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      isLogin = !isLogin;
+                                    });
+                                  },
+                                  child: Text(
+                                    isLogin
+                                        ? 'create new account'
+                                        : 'Already have account',
+                                  ),
+                                )
                             ],
                           ),
                         ),
