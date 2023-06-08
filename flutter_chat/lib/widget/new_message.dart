@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class NewMessages extends StatefulWidget {
@@ -46,16 +45,6 @@ class _NewMessagesState extends State<NewMessages> {
     });
   }
 
-  int increaseMaxLine() {
-    if (maxLine < 5) {
-      setState(() {
-        maxLine != 1;
-      });
-    }
-
-    return maxLine;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -69,7 +58,6 @@ class _NewMessagesState extends State<NewMessages> {
               autocorrect: true,
               enableSuggestions: true,
               decoration: const InputDecoration(labelText: 'Send a message...'),
-              maxLines: isLineIncrease ? null : increaseMaxLine(),
             ),
           ),
           IconButton(
