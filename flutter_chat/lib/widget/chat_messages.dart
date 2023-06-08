@@ -38,10 +38,32 @@ class ChatMessages extends StatelessWidget {
         final loadedMessages = chatSnapshot.data!.docs;
 
         return ListView.builder(
-          itemCount: loadedMessages.length,
-          itemBuilder: (ctx, index) => Text(
-            loadedMessages[index].data()['text'],
+          padding: const EdgeInsets.only(
+            bottom: 20,
+            right: 14,
+            left: 14,
           ),
+          itemCount: loadedMessages.length,
+          itemBuilder: (ctx, index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(
+                      loadedMessages[index].data()['userImage'],
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    loadedMessages[index].data()['text'],
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
